@@ -1,0 +1,1 @@
+* Counter is listed as "Bishop Street Enoggera" in the counter-locations file, but just "Bishop Street" in the bikeway-counts file.

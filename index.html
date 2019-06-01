@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Leaflet Experiment</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
+          integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+          crossorigin=""/>
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/dygraph/2.1.0/dygraph.min.css" />
+
+    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
+            integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
+            crossorigin=""></script>
+    <script src="csv.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/dygraph/2.1.0/dygraph.min.js"></script>
+    <script src="js/moment.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        .container	{
+            position: absolute;
+            height: 100%;
+            min-height: 100%;
+            width: 100%;
+        }
+        #mainmap {
+            height: 100%;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-family: sans-serif;
+            font-size: 36px;
+            flex: 1;
+            justify-content: center;
+            background: whitesmoke;
+        }
+        .leaflet-popup-content-wrapper {
+            font-size: 16px;
+        }
+        .right-drawer-wrapper {
+            overflow-x: hidden;
+            overflow-y: scroll;
+            background: white;
+            z-index: 1000;
+            height: 100%;
+            width: 550px;
+            position: absolute;
+            right: 0;
+            top: 0;
+            box-shadow: -2px 1px 7px silver;
+            font-family: sans-serif;
+
+        }
+        .right-drawer {
+            margin: 16px;
+        }
+        .right-drawer-title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="mainmap"></div>
+    <div class="right-drawer-wrapper">
+        <div class="right-drawer">
+            <div class="right-drawer-title">North Brisbane Bikeway Mann Park Windsor</div>
+            <div class="right-drawer-content">
+                <div class="bikeway-counter-details"></div>
+                <div id="counter-timeseries"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+
+    class CounterInfo {
+        constructor () {
+            this.counterName = "";
+            this.latitude = 0;
+            this.longitude = 0;
+            this.counterId = "";
+            this.type = "";
+            /** @type {Array<moment>}} */
+            this.dates = null;
+            /** @type {Array<number>} */
+            this.pedestriansInbound = null;
+            /** @type {Array<number>} */
+            this.pedestriansOutbound = null;
+            /** @type {Array<number>} */
+            this.bicyclesInbound = null;
+            /** @type {Array<number>} */
+            this.bicyclesOutbound = null;
+        }
+    }
+
+
+    let timeseries = null;
+    const counters = [];
+    const countersByName = new Map();
+    const countersById = new Map();
+
+
+    var bikeCountMap = L.map('mainmap').setView([-27.46, 153.02], 13);
+
+    L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
+        attribution: 'Map tiles by Carto, under CC BY 3.0. Data by OpenStreetMap, under ODbL.',
+        maxZoom: 18,
+        id: 'mapbox.streets',
+        accessToken: 'your.mapbox.access.token'
+    }).addTo(bikeCountMap);
+
+    var BikeCounterIcon = L.Icon.extend({
+        options: {
+            shadowUrl: 'images/marker-shadow.png',
+            iconSize:     [24, 38],
+            shadowSize:   [9, 4],
+            iconAnchor:   [12, 38],
+            shadowAnchor: [4, 2],
+            popupAnchor:  [-3, -76]
+        }
+    });
+    const manualIcon = new BikeCounterIcon({iconUrl: 'images/manual-marker.png'});
+    const autoIcon = new BikeCounterIcon({iconUrl: 'images/auto-marker.png'});
+
+
+    CSV.fetch({
+            url: 'data/bikeway-counts-counter-locations-2004-2016.csv',
+        }
+    ).then((dataset) => {
+
+        /** @type {Array<CounterInfo>} */
+
+        let fieldCounter = 0;
+        let counterIdIndex = 0;
+        let counterLatIndex = 0;
+        let counterLongIndex = 0;
+        let counterNameIndex = 0;
+        let counterTypeIndex = 0;
+        for (let fieldName of dataset.fields) {
+            if (fieldName === 'Site ID') {
+                counterIdIndex = fieldCounter;
+            } else if (fieldName === 'Longitude') {
+                counterLongIndex = fieldCounter;
+            } else if (fieldName === 'Site Name') {
+                counterNameIndex = fieldCounter;
+            } else if (fieldName === 'Latitude') {
+                counterLatIndex = fieldCounter;
+            } else if (fieldName === 'Type') {
+                counterTypeIndex = fieldCounter;
+            }
+            fieldCounter++;
+        }
+        for (let record of dataset.records) {
+            const counterInfo = new CounterInfo();
+            counterInfo.counterId = record[counterIdIndex];
+            counterInfo.counterName = record[counterNameIndex];
+            counterInfo.latitude = record[counterLatIndex];
+            counterInfo.longitude = record[counterLongIndex];
+            counterInfo.type = record[counterTypeIndex];
+            counters.push(counterInfo);
+            countersById.set(counterInfo.counterId, counterInfo);
+            countersByName.set(counterInfo.counterName, counterInfo);
+        }
+
+        for (let counterInfo of counters) {
+            let marker = null;
+            if (counterInfo.type === 'Manual') {
+                marker = L.marker([counterInfo.latitude, counterInfo.longitude], {icon: manualIcon});//.addTo(bikeCountMap);
+            } else {
+                marker = L.marker([counterInfo.latitude, counterInfo.longitude], {icon: autoIcon});
+            }
+            marker.addTo(bikeCountMap).on('click', (e) => {displayCounterDetails(counterInfo)})
+        }
+
+
+        loadAutoCounterStats()
+    });
+
+    function loadAutoCounterStats() {
+        const counterNameRE = /^(.*) (Cycl\w+|Pede\w+) (Inbound|Outbound)$/;
+        CSV.fetch({
+                url: 'data/bike-ped-auto-counts-2016.csv',
+            }
+        ).then((dataset) => {
+            if (dataset.fields[0] !== 'Date') {
+                throw "First field of bike-ped-auto-counts-2016.csv must be 'Date'";
+            }
+
+            const dates = new Array();
+            for (let record of dataset.records) {
+                const d = moment(record[0], 'DD/MM/YYYY');
+                dates.push(d);
+                console.log(d);
+            }
+            for (let i in dataset.fields) {
+                const fieldName = dataset.fields[i];
+                const counterNameParts = counterNameRE.exec(fieldName);
+                if (counterNameParts && counterNameParts.length === 4) {
+                    /** @type {CounterInfo} */
+                    const counterInfo = countersByName.get(counterNameParts[1]);
+                    const subject = counterNameParts[2];
+                    const direction = counterNameParts[3];
+                    if (counterInfo && counterInfo.type === 'Automatic') {
+                        counterInfo.dates = dates;
+                        const values = new Array();
+                        for (let record of dataset.records) {
+                            values.push(record[i]);
+                        }
+                        if (subject.startsWith('Ped')) {
+                            if (direction.startsWith('In')) {
+                                counterInfo.pedestriansInbound = values;
+                            } else {
+                                counterInfo.pedestriansOutbound = values
+                            }
+                        } else {
+                            if (direction.startsWith('In')) {
+                                counterInfo.bicyclesInbound = values;
+                            } else {
+                                counterInfo.bicyclesOutbound = values
+                            }
+                        }
+                    }
+                    console.log(counterInfo);
+                }
+            }
+        });
+    };
+
+    function displayCounterDetails(counterInfo) {
+        const titleElement = document.getElementsByClassName('right-drawer-title')[0];
+        var text = ('innerText' in titleElement)? 'innerText' : 'textContent';
+        titleElement[text] = counterInfo.counterName;
+
+        const counterDetailsElement = document.getElementsByClassName('bikeway-counter-details')[0];
+        counterDetailsElement.innerHTML = '<h3>' + counterInfo.type + '</h3>';
+
+
+        const chartData = new Array();
+        for (let i in counterInfo.dates) {
+            chartData.push([counterInfo.dates[i].toDate(), counterInfo.pedestriansInbound[i], counterInfo.bicyclesInbound[i]]);
+        }
+
+        if (timeseries) {
+            timeseries.destroy();
+        }
+        timeseries = new Dygraph(document.getElementById("counter-timeseries"),
+            chartData,
+            {
+                labels: ["", "Pedestrians", "Cyclists"]
+            });
+    }
+
+
+
+
+</script>
+</body>
+</html>
