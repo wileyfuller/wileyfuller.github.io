@@ -246,8 +246,17 @@
 
 
         const chartData = new Array();
+        const hasPedestrianCounts = counterInfo.pedestriansInbound && counterInfo.pedestriansInbound.length > 0;
+        const hasBicycleCounts = counterInfo.bicyclesInbound && counterInfo.bicyclesInbound.length > 0;
+        const labelArray = [""];
+        if (hasPedestrianCounts) {labelArray.push("Ped-Inbound");}
+        if (hasBicycleCounts) {labelArray.push("Bike-Inbound");}
         for (let i in counterInfo.dates) {
-            chartData.push([counterInfo.dates[i].toDate(), counterInfo.pedestriansInbound[i], counterInfo.bicyclesInbound[i]]);
+            const record = [];
+            record.push(counterInfo.dates[i].toDate());
+            if (hasPedestrianCounts) {record.push(counterInfo.pedestriansInbound[i]);}
+            if (hasBicycleCounts) {record.push(counterInfo.bicyclesInbound[i]);}
+            chartData.push(record);
         }
 
         if (timeseries) {
@@ -256,8 +265,12 @@
         timeseries = new Dygraph(document.getElementById("counter-timeseries"),
             chartData,
             {
-                labels: ["", "Pedestrians", "Cyclists"]
-            });
+                labels: labelArray,
+                rollPeriod: 7,
+                showRoller: true
+            },
+
+        );
     }
 
 

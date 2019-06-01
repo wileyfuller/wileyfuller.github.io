@@ -1,1 +1,4 @@
 * Counter is listed as "Bishop Street Enoggera" in the counter-locations file, but just "Bishop Street" in the bikeway-counts file.
+* "Go Between Bridge Cyclists" and "Go Between Bridge Pedestrians" don't fit the site naming convention very well. Can't easily corellate data between the locations file and the bikeway-counts file. Same goes for Eleanor Schonell bridge.
+* Consider adding the Site ID field to the headers in the bike-ped-auto-counts files. This would make it much easier to correlate data. Using "Site Name" is just not a good way to do it.
+* "Between Bridge Bicyecles" in the counter-locations file is spelt incorrectly.

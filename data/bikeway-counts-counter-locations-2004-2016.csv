@@ -82,10 +82,8 @@ M074,M074,The Esplanade St Lucia,The Esplanade St Lucia,Manual,-27.502343,153.00
 A001,A001,Bicentennial Bikeway,Bicentennial Bikeway,Automatic,-27.478042,153.00035,,2013,,,,,,,,,,1,1,1,1
 A002,A002,Bishop Street,Bishop Street,Automatic,-27.442665,153.007893,,2015,,,,,,,,,,,,1,1
 A003,A003,Ekibin Park,Ekibin Park,Automatic,-27.507369,153.041856,,2015,,,,,,,,,,,,1,1
-A004N,A004,Eleanor Schonell Bridge,Eleanor Schonell Bridge Cyclists,Automatic,-27.49785,153.01852,,2013,,,,,,,,,,1,1,1,1
-A004S,A004,Eleanor Schonell Bridge,Eleanor Schonell Bridge Pedestrians,Automatic,-27.497684,153.018579,,2013,,,,,,,,,,1,1,1,1
-A005W,A005,Go Between Bridge,Go Between Bridge Bicyecles,Automatic,-27.471202,153.013334,,2014,,,,,,,,,,,1,1,1
-A005E,A005,Go Between Bridge,Go Between Bridge Pedestrians,Automatic,-27.470671,153.013175,,2014,,,,,,,,,,,1,1,1
+A004,A004,Eleanor Schonell Bridge,Eleanor Schonell Bridge,Automatic,-27.49785,153.01852,,2013,,,,,,,,,,1,1,1,1
+A005,A005,Go Between Bridge,Go Between Bridge,Automatic,-27.471202,153.013334,,2014,,,,,,,,,,,1,1,1
 A006,A006,Granville Street Bridge,Granville Street Bridge,Automatic,-27.442521,153.020928,,2015,,,,,,,,,,,,1,1
 A007,A007,Jack Pesch Bridge,Jack Pesch Bridge,Automatic,-27.507082,152.973653,,2015,,,,,,,,,,,,1,1
 A008,A008,Kangaroo Point Bikeway,Kangaroo Point Bikeway,Automatic,-27.481505,153.032133,,2014,,,,,,,,,,,1,1,1
