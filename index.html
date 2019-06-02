@@ -100,6 +100,17 @@
             this.bicyclesInbound = null;
             /** @type {Array<number>} */
             this.bicyclesOutbound = null;
+
+            /** @type {Array<moment>}} */
+            this.weekEndingDates = new Array();
+            /** @type {Array<Array<number>>} */
+            this.bikeInByWeek = new Array();
+            /** @type {Array<Array<number>>} */
+            this.pedInByWeek = new Array();
+            /** @type {Array<Array<number>>} */
+            this.bikeOutByWeek = new Array();
+            /** @type {Array<Array<number>>} */
+            this.pedOutByWeek = new Array();
         }
     }
 
@@ -189,7 +200,7 @@
     function loadAutoCounterStats() {
         const counterNameRE = /^(.*) (Cycl\w+|Pede\w+) (Inbound|Outbound)$/;
         CSV.fetch({
-                url: 'data/bike-ped-auto-counts-2016.csv',
+                url: 'data/bike-ped-auto-counts-combined.csv',
             }
         ).then((dataset) => {
             if (dataset.fields[0] !== 'Date') {
@@ -233,6 +244,47 @@
                     console.log(counterInfo);
                 }
             }
+
+            //Summarise data
+            for (let counterInfo of counters) {
+                if (counterInfo.type === 'Automatic') {
+                    let currentWeekEndDate = null;
+                    /** @type {Array<number>} */
+                    let bikeIn = new Array();
+                    /** @type {Array<number>} */
+                    let pedIn = new Array();
+                    /** @type {Array<number>} */
+                    let bikeOut = new Array();
+                    /** @type {Array<number>} */
+                    let pedOut = new Array();
+
+                    for (let i in counterInfo.dates) {
+                        let date = counterInfo.dates[i];
+                        const daysToWeekEnd = 6 - date.day();
+                        let weekEndDate = date.clone();
+                        weekEndDate = weekEndDate.add(daysToWeekEnd, 'days');
+                        if (!weekEndDate.isSame(currentWeekEndDate)) {
+                            if (currentWeekEndDate) {
+                                counterInfo.weekEndingDates.push(currentWeekEndDate);
+                                counterInfo.bikeInByWeek.push(bikeIn);
+                                counterInfo.bikeOutByWeek.push(bikeOut);
+                                counterInfo.pedInByWeek.push(pedIn);
+                                counterInfo.pedOutByWeek.push(pedOut);
+                                bikeIn = new Array();
+                                pedIn = new Array();
+                                bikeOut = new Array();
+                                pedOut = new Array();
+                            }
+                            currentWeekEndDate = weekEndDate;
+                        }
+                        bikeIn[date.day()] = counterInfo.bicyclesInbound ? counterInfo.bicyclesInbound[i] : 0;
+                        bikeOut[date.day()] = counterInfo.bicyclesOutbound ? counterInfo.bicyclesOutbound[i] : 0;
+                        pedIn[date.day()] = counterInfo.pedestriansInbound ? counterInfo.pedestriansInbound[i] : 0;
+                        pedOut[date.day()] = counterInfo.pedestriansOutbound ? counterInfo.pedestriansOutbound[i]: 0;
+                        //TODO IMPORTANT!  This will fail to save the last week. FIX!
+                    }
+                }
+            }
         });
     };
 
@@ -249,13 +301,19 @@
         const hasPedestrianCounts = counterInfo.pedestriansInbound && counterInfo.pedestriansInbound.length > 0;
         const hasBicycleCounts = counterInfo.bicyclesInbound && counterInfo.bicyclesInbound.length > 0;
         const labelArray = [""];
-        if (hasPedestrianCounts) {labelArray.push("Ped-Inbound");}
-        if (hasBicycleCounts) {labelArray.push("Bike-Inbound");}
-        for (let i in counterInfo.dates) {
+        if (hasPedestrianCounts) {labelArray.push("Ped-In");}
+        if (hasBicycleCounts) {labelArray.push("Bike-In");}
+        for (let i in counterInfo.weekEndingDates) {
             const record = [];
-            record.push(counterInfo.dates[i].toDate());
-            if (hasPedestrianCounts) {record.push(counterInfo.pedestriansInbound[i]);}
-            if (hasBicycleCounts) {record.push(counterInfo.bicyclesInbound[i]);}
+            const date = counterInfo.weekEndingDates[i].toDate();
+
+            record.push(date);
+            if (hasPedestrianCounts) {
+                record.push([weekDayLow(counterInfo.pedInByWeek[i]), weekDayAvg(counterInfo.pedInByWeek[i]), weekDayHigh(counterInfo.pedInByWeek[i])]);
+            }
+            if (hasBicycleCounts) {
+                record.push([weekDayLow(counterInfo.bikeInByWeek[i]), weekDayAvg(counterInfo.bikeInByWeek[i]), weekDayHigh(counterInfo.bikeInByWeek[i])]);
+            }
             chartData.push(record);
         }
 
@@ -266,12 +324,55 @@
             chartData,
             {
                 labels: labelArray,
-                rollPeriod: 7,
-                showRoller: true
+                rollPeriod: 1,
+                customBars: true
             },
 
         );
     }
+
+    function weekDayAvg(weekValues) {
+        let valueCount = 0;
+        let total = 0;
+        for (let i = 1; i < 6; i++) {
+            if (weekValues[i] != undefined && weekValues[i] != null) {
+                total += weekValues[i];
+                valueCount++;
+            }
+        }
+        if (valueCount === 0) {
+            return 0;
+        } else {
+            return Math.floor(total / valueCount);
+        }
+    }
+
+    function weekDayLow(weekValues) {
+        let min = 500000;
+        let valueCount = 0;
+        for (let i = 1; i < 6; i++) {
+            if (weekValues[i] != undefined && weekValues[i] != null) {
+                if (weekValues[i] < min) {
+                    min = weekValues[i];
+                    valueCount++;
+                }
+            }
+        }
+        return valueCount === 0 ? 0 : min;
+    }
+
+    function weekDayHigh(weekValues) {
+        let max = 0;
+        for (let i = 1; i < 6; i++) {
+            if (weekValues[i] != undefined && weekValues[i] != null) {
+                if (weekValues[i] > max) {
+                    max = weekValues[i];
+                }
+            }
+        }
+        return max;
+    }
+
 
 
 
