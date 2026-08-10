@@ -1,0 +1,93 @@
+/* 1. THEME VARIABLES */
+:root {
+    --bg: #ffffff;
+    --text: #1a1a1a;
+    --bar-bg: #f0f0f0;
+    --line: #000000;
+    --dim: #666666;
+    --accent: #0066cc;
+}
+
+body.dark-mode {
+    --bg: #121212;
+    --text: #e0e0e0;
+    --bar-bg: #1a1a1a;
+    --line: #333333;
+    --dim: #a0a0a0;
+    --accent: #4da6ff;
+}
+
+/* 2. BASE STYLES */
+body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, system-ui, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    transition: background-color 0.3s ease;
+}
+
+/* 3. TITLE BAR (Full Width) */
+.title-bar {
+    background-color: var(--bar-bg);
+    border-bottom: 1px solid var(--line);
+    width: 100%;
+    padding: 10px 0; /* Smaller vertical padding */
+    margin-bottom: 20px;
+}
+
+.header-content {
+    max-width: 650px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.title-bar h1 {
+    font-size: 1.2rem; /* Smaller title font */
+    margin: 0;
+}
+
+/* 4. CONTENT AREA */
+.content-wrapper {
+    max-width: 650px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+section {
+    border-bottom: 1px solid var(--line);
+    padding: 30px 0;
+}
+
+.post-date {
+    font-family: monospace;
+    color: var(--dim);
+    display: block;
+    font-size: 0.85rem;
+}
+
+/* 5. TOGGLE BUTTON */
+.btn-toggle {
+    background-color: var(--bg);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+}
+
+.post-meta {
+    display: flex;
+    gap: 10px;
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--dim);
+}
+
+.post-date, .post-author {
+    display: inline-block;
+}
